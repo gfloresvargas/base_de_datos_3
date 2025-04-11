@@ -1,0 +1,72 @@
+v1
+#crear las base de datos mediante psql o bien mediante el pgadmin4.
+#creación de la base de datos de la gomería con el propietario postgres
+CREATE DATABASE gomeria 
+    WITH
+    OWNER = postgres
+    TEMPLATE = template0
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'es_AR.UTF-8'
+    LC_CTYPE = 'es_AR.UTF-8'
+    CONNECTION LIMIT = -1;
+
+#crear usuarios para acceder a la base de datos
+create role usuario1 login password '123abc';
+
+
+#CREAR UN GROUP ROLE
+create role grupo1;
+
+#Asignar un usuario a un grupo
+grant grupo1 to usuario1;
+
+\c ventas postgres
+grant cajas to cajero;
+\du
+#logearse
+ psql -d gomeria grupo1 
+ psql -d gomeria usuario1
+
+#Verificar que usuario esta conectado
+select current_user;
+
+#dar premiso a los usuarios a los esquemas
+alter schema public owner to postgres;  
+alter schema public owner to grupo1;  
+
+grant usage, create on schema public to postgres;   
+grant usage, create on schema public to usuario1;    
+
+#dar el permiso de acceso completo a la base de datos creada, al usuario postgres
+grant all on database gomeria to postgres;
+grant all on database gomeria to usuario1;
+
+#probar crear una tabla de ejemplo 
+create table clientes(idcliente integer, nombre char(50));
+
+#consultar tablas creada
+select * from articulos;
+
+#al grupo solo permitirlse a los usuarios del grupo1, una sesion
+alter role grupo1 connection limit 1;
+
+--probar ingreso en dos consolas
+
+--dar permiso de lectura  una tabla
+grant select on clientes to usuario1;
+
+--crear un usuario y adignarlo directamente
+create role supervisor with login password '123' in role cajas;
+
+
+#hacer un backup
+#por medio del comando pgdump en la carpeta backup del servidor
+#conectarse a la consulta por medio de ssh y desde el usuario root hacer
+
+#en host ponga la ip de su máquina virtual
+pg_dump --file "/backups/backup_gomeria.backup" --host "192.168.0.245" --port "5432" --username "postgres"  --verbose --format=c "gomeria" 
+
+#esta es una forma alternativa
+pg_dump -i -h 192.168.0.245 -p 5432 -U postgres -W c -b -v -f "/backups/backup_gomeria.backup" gomeria 
+
+#por medio de pgadmin4, utilice la opción del menú contextual al posicionarse en la base de datos a resguardar.

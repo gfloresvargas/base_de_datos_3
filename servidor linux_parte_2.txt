@@ -1,0 +1,97 @@
+#ingresar como usuario postgres
+sudo su postgres
+psql
+
+#cambiar la contraseña por defecto del usuario postgres
+\password postgres;
+#ingresar la nueva contraseña y luego confirmarla.
+
+#salir de la consola postgres
+\q
+
+#corregir parámetros de conexión
+nano /etc/postgres/15/main/pg_hba.conf
+
+#habilitar la conexión local por medio de clave md5. 
+#Buscar la línea  donde dice local 
+local       all     postgres        peer
+#y cambiar por 
+local       all     postgres        md5 
+
+#reiniciar el servicio
+systemctl restart postgresql.service
+
+#habilitar la conexión desde cualquier ip a la base de datos postgres
+#buscar la linea donde dice IPv4
+host        all     all     127.0.0.1/32       scram-sha-256
+#y agregar una nueva linea 
+host        all     all     0.0.0.0/0      scram-sha-256
+
+#reiniciar el servicio
+systemctl restart postgresql.service
+
+#En este punto puede hacer la prueba de conectarse desde cualquier administrador Postgres como pgAdmin4-web o pgAdmin4-desktop.
+#También puede instalar DBeaver.
+
+#si quiere probar desde una consola linux puede iniciar con
+psql -U postgres -W postgres
+
+#dentro de la consola mostrar la ubicación de los archivos data y la configuración de los logs.
+show logs_directory; 
+
+show data_directory;
+#cambiar la configuración de los archivos logs
+\q
+nano /etc/postgres/15/main/postgres.conf
+#ir  hasta las siguientes lineas
+
+loggin_collector = off
+log_directory = 'log'
+
+#descomentar y cambiar por 
+loggin_collector = on
+log_directory = '/logs'
+
+#antes asegúrese que exista la carpeta 
+#cambie los permisos para que se pueda acceder desde el servicio de postgresql.
+sudo chown -R postgres:postgres /logs
+
+#cambiar la configuración de los archivos data
+#detener el servicio
+sudo systemctl stop postgresql.service
+sudo systemctl status postgresql.service
+
+#cambiar los permisos para la carpeta que recibirá los datos
+sudo chown -R postgres:postgres /data
+
+#verficiar si está instalado el comando rsync
+rsync --version
+
+#si no estuviera instalado, hacer.
+sudo apt install rsync -y
+
+#copiar la carpeta data_directory a la nueva ubicación
+sudo rsync -av /var/lib/postgresql/15/main /data
+
+#renombrar la carpeta anterior para que no confunda. 
+sudo mv -v /var/lib/postgresql/15/main /var/lib/postgresql/15/main.bk 
+
+#referenciar la nueva ubicación
+nano /etc/postgres/15/main/postgres.conf
+
+#buscar la linea que dice 
+data_directory = '/var/lib/postgresql/15/main'
+#cambiar por 
+data_directory = '/data/main'
+
+#guardar los cambios e iniciar el servicio
+sudo systemctl start postgresql.service
+
+#validar
+psql -U postgres -W postgres
+show logs_directory; 
+show data_directory;
+\q
+
+#en esta instancia ya está apto para crear una base de datos
+

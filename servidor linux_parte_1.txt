@@ -1,0 +1,63 @@
+#Tareas necesarias para hacer la instalación del servidor postgresq en debian 12.
+#servidor linux
+#conocer la ip de la pc virtual
+ip a
+#192.168.95.217
+
+#desactivar el DVD en el repositorio
+nano /etc/apt/sources.list
+#comentar la linea que die CD con el #
+
+#instalar el servicio
+#debe ingresar como usuario root o administrador
+apt install openssh-server
+
+#verificar si esta levantado el servicio ssh
+systemctl status sshd
+systemctl start sshd
+
+#debe aparecer (Active) puerto que tiene que estar escuchando es el 22
+#cambiar las propiedades para que se conecten usuarios root
+nano /etc/ssh/sshd_config
+#buscar la linea donde dice PermitRootLogin y cambiar a yes
+#guardar con Contro + o y salir con Control + X
+#reiniciar el servicio con 
+systemctl restart sshd
+
+#habilitar para que se inicie el servicio ssh cada vez que se reinicie
+systemctl enable sshd
+
+#otra forma de validacion del puerto 22
+ss -anput | grep 22
+
+#validacion desde la pc de windows
+#si no está instalado el servicio telnet, instalar desde "Activar Complementos de Windows"
+telnet 192.168.95.217 22
+
+#ingresar con putty a la dirección
+192.168.95.217 puerto 22
+acceder con usuario root / administrador de instalación
+
+#instalar postgresql
+apt update
+apt install postgresql postgrsql-contrib
+
+#validar el servicio que está escuchando
+ss -anput | grep 5432
+#aparecerá algo así 127.0.0.1:5432
+
+#cambiar las propiedades para que se pueda conectar. 
+cd /etc/postgresql/15/main
+
+#cambiar el archivo de configuración
+nano postgresql.conf
+
+#cambiar la linea que dice listen = 'localhost' por listen = '*'
+#guardar y reiniciar el servicio
+systemctl restart postgresql.service
+
+#volver a validar 
+ss -anput | grep 5432
+#debería aparecer 0.0.0.0:5432
+
+
